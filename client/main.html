@@ -1,0 +1,106 @@
+
+<head>
+    <meta charset="utf-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'/>
+    <title>BreezoMeter Tiles</title>
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+    <!-- GoogleMutant -->
+    <!-- Make sure to place your google maps API key in order to load the tiles  -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBg3CK3Mq_YmHeD6mD4Rvyd4ZaWlDuUeQg&libraries=places"></script>
+    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+    crossorigin=""></script>
+    <script src='https://unpkg.com/leaflet.gridlayer.googlemutant@latest/Leaflet.GoogleMutant.js'></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+
+
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
+    </style>
+
+</head>
+<body>
+
+<input id="pac-input" class="controls" type="text" placeholder="Search Box">
+<div id="map"></div>
+
+<script>
+
+
+    var apiKey = 'de4fef0f7fb349f29f3f21c275018069'; // Your BreezoMeter API key
+    // Google Maps
+    //var googleMapsTiles = L.gridLayer.googleMutant({ type: 'hybrid', isTrafficOn:true });
+
+        var map = L.map('map', {
+        center: [ 48.2, 16.4 ],
+        zoom: 13,
+        //layers: [ googleMapsTiles ]
+
+    });
+
+      // var layer = L.tileLayer("http://1.base.maps.cit.api.here.com/maptile/2.1/maptile/newest/normal.day/{z}/{x}/{y}/256/png8?app_id=x91r6MFGL4GA5mtv7qPj&app_code=b4Kl_0l8K04RzFE_ySExcw"
+      //   , {
+      //   styleId: 997
+      // }).addTo(map);
+
+
+    var popup = L.popup({autoPan:true, maxWidth:10, autoPanPaddingTopLeft:2, autoPanPaddingTopRight:2, center:true});
+
+
+    var hereLayer = L.tileLayer('https://1.traffic.maps.api.here.com/maptile/2.1/traffictile/newest/normal.day/{z}/{x}/{y}/256/png8?app_id=x91r6MFGL4GA5mtv7qPj&app_code=b4Kl_0l8K04RzFE_ySExcw', {
+        tms: false,
+        opacity: 1,
+        }).addTo(map);
+
+    // Overlay BreezoMeter Layer
+    var breezometerTiles = L.tileLayer('https://tiles.breezometer.com/v1/air-quality/breezometer-aqi/current-conditions/{z}/{x}/{y}.png?key=' + apiKey, {
+        tms: false,
+        opacity: 0.65,
+        maxNativeZoom: 8
+    }).addTo(map);
+
+
+    
+
+
+  function onMapClick(e) {
+
+
+          var settings = {
+           "async": true,
+           "crossDomain": true,
+           "url": 'https://api.breezometer.com/air-quality/v2/current-conditions?lat='+e.latlng.lat+'&lon='+e.latlng.lng+'&key='+apiKey+'&features=breezometer_aqi,local_aqi,health_recommendations,sources_and_effects,pollutants_concentrations,pollutants_aqi_information',
+           "method": "GET"
+         }
+
+         $.ajax(settings).done(function (response) {
+          //L.marker([e.latlng.lat,e.latlng.lng], {draggable: true, autoclose:true, title: "Air Quality Index " + response.data.indexes.baqi.aqi.toString()}).addTo(map).bindPopup("I am a green leaf.");
+              popup.setLatLng(e.latlng)
+              popup.setContent("Air Quality Index " + response.data.indexes.baqi.aqi.toString() + " CO " + response.data.pollutants.co.concentration.value.toString()+" ppb " + " NO2 " + response.data.pollutants.no2.concentration.value.toString()+" ppb "+ " o3 " + response.data.pollutants.no2.concentration.value.toString()+" ppb " + " pm10 " + response.data.pollutants.pm10.concentration.value.toString()+" ug/m3 ")
+              popup.openOn(map)
+           console.log(response.data.indexes.baqi.aqi);
+         });
+
+}
+
+
+map.on('click', onMapClick);
+
+function getAjax(url, success) {
+    var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    xhr.open('GET', url);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState>3 && xhr.status==200) success(xhr.responseText);
+    };
+    xhr.setRequestHeader('Accept', 'Content-Type');
+    xhr.send();
+    return xhr;
+}
+
+</script>
+
+</body>
